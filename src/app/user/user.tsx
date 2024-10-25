@@ -14,59 +14,80 @@ const UserList = () => {
   const { displayUser, actions } = useDisplayUserStore((state) => state);
   const debouncedKeyword = useDebounce(keyword, 500);
   useEffect(() => {
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) {
-        handleRefetch();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          handleRefetch();
+        }
+      },
+      {
+        threshold: 1.0,
       }
-    }, {
-      threshold: 1.0
-    })
+    );
     if (targetRef.current) observer.observe(targetRef.current);
-    return (() => {
+    return () => {
       observer.disconnect();
-    })
-  }, [targetRef])
+    };
+  }, [targetRef]);
 
-  const { data: githubUser, refetch, isPending } = useGithubUserQuery(debouncedKeyword, pageRef.current);
+  const {
+    data: githubUser,
+    refetch,
+    isPending,
+  } = useGithubUserQuery(debouncedKeyword, pageRef.current);
 
   useEffect(() => {
-    if (githubUser) actions.addDisplayUsers(githubUser.map((user:GithubUser) => convertUser(user)));
-  }, [githubUser, actions])
+    if (githubUser)
+      actions.addDisplayUsers(
+        githubUser.map((user: GithubUser) => convertUser(user))
+      );
+  }, [githubUser, actions]);
 
-
-  const onBookmarkClick = (user:User) => {
+  const onBookmarkClick = (user: User) => {
     bookmarkToggle(user);
     actions.updateDisplayUser({
       ...user,
-      isLiked: !user.isLiked
-    })
-  }
+      isLiked: !user.isLiked,
+    });
+  };
   const userList = displayUser?.map((user, index) => {
     return (
-      <UserCard key={`${user.id}-${user.name}-${index}`} user={user} onBookmarkClick={onBookmarkClick} />
-    )
-  })
+      <UserCard
+        key={`${user.id}-${user.name}-${index}`}
+        user={user}
+        onBookmarkClick={onBookmarkClick}
+      />
+    );
+  });
 
-  const changeKeyword = (e:React.ChangeEvent<HTMLInputElement>) => {
+  const changeKeyword = (e: React.ChangeEvent<HTMLInputElement>) => {
     setKeyword(e.target.value);
     actions.initDisplayUser();
-  }
+  };
   const handleRefetch = async () => {
     await refetch();
     pageRef.current += 1;
-  }
+  };
   return (
     <div className="p-4">
-      <input className="mb-2 border border-slate-900 dark:border-slate-50 rounded-lg bg-transparent focus:outline-none" type="text" value={keyword} onChange={changeKeyword} />
+      <input
+        className="mb-2 border border-slate-900 dark:border-slate-50 rounded-lg bg-transparent focus:outline-none"
+        type="text"
+        value={keyword}
+        onChange={changeKeyword}
+      />
       <div className="grid grid-cols-2 gap-4">
-          {isPending ? <UserCardSkeleton /> : (displayUser.length > 0 ? userList : <div className="text-center col-span-2">No user found</div>)}
+        {isPending ? (
+          <UserCardSkeleton />
+        ) : displayUser.length > 0 ? (
+          userList
+        ) : (
+          <div className="text-center col-span-2">No user found</div>
+        )}
       </div>
-      {
-        displayUser.length > 0 &&
-          <div className="h-12" ref={targetRef}></div>
-      }
+      {displayUser.length > 0 && <div className="h-12" ref={targetRef}></div>}
     </div>
-  )
-}
+  );
+};
 
 export default UserList;
