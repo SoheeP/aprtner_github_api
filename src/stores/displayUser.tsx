@@ -7,6 +7,7 @@ export type DisplayUserStore = {
   actions: {
     addDisplayUsers: (displayUser:User[]) => void
     updateDisplayUser: (displayUser:User) => void
+    initDisplayUser: () => void
   }
 }
 
@@ -22,7 +23,8 @@ export const createDisplayUserStore = () => {
         return {
           displayUser: newDisplayUser
         }
-      })
+      }),
+      initDisplayUser: () => set({ displayUser: [] })
     }
   }))
 }
