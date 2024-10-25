@@ -1,14 +1,13 @@
 "use client";
-import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import UserCard from "./userCard";
 import { GithubUser, type User } from "./type";
 import { useDisplayUserStore } from "@/providers/displayUserStoreProvider";
-import { bookmarkToggle, isBookmarked } from "./service";
+import { bookmarkToggle, convertUser, useGithubUserQuery } from "./service";
 import UserCardSkeleton from "./userCardSkeleton";
 
 const UserList = () => {
-  const [keyword, setKeyword] = useState("");
+  const [keyword, setKeyword] = useState("k");
   const pageRef = useRef(1);
   const targetRef = useRef<HTMLDivElement>(null);
   const { displayUser, actions } = useDisplayUserStore((state) => state);
@@ -26,36 +25,12 @@ const UserList = () => {
     })
   }, [targetRef])
 
-  const { data, refetch, isPending } = useQuery({
-    queryKey: ["users"],
-    queryFn: async () => {
-      const response = await fetch(`https://api.github.com/search/users?q=k&per_page=20&page=${pageRef.current}`);
-      const jsonData = await response.json();
-      return jsonData.items
-    },
-  },)
+  const { data: githubUser, refetch, isPending } = useGithubUserQuery(keyword, pageRef.current);
 
   useEffect(() => {
-    if (data) actions.addDisplayUsers(data.map((user:GithubUser) => convertUser(user)));
-  }, [data])
+    if (githubUser) actions.addDisplayUsers(githubUser.map((user:GithubUser) => convertUser(user)));
+  }, [githubUser, actions])
 
-  const convertUser = (data:GithubUser):User => {
-    const defaultUser:User = {
-      id: "tiny ping",
-      name: "Tiny Ping",
-      imageUrl: "https://static.wikia.nocookie.net/catchteenieping/images/a/ac/%ED%95%98%EC%B8%84%EC%9E%89_%EC%8B%9C%EC%A6%8C_2.png/revision/latest/thumbnail/width/360/height/450?cb=20211024200626&path-prefix=ko",
-      githubUrl: "https://github.com",
-      isLiked: false
-    }
-
-    return {
-      id: data.node_id || defaultUser.id,
-      name: data.login || defaultUser.name,
-      imageUrl: data.avatar_url || defaultUser.imageUrl,
-      githubUrl: data.html_url || defaultUser.githubUrl,
-      isLiked: isBookmarked(data.node_id)
-    }
-  }
 
   const onBookmarkClick = (user:User) => {
     bookmarkToggle(user);
