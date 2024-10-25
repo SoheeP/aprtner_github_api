@@ -5,6 +5,7 @@ import UserCard from "./userCard";
 import { GithubUser, type User } from "./type";
 import { useDisplayUserStore } from "@/providers/displayUserStoreProvider";
 import { bookmarkToggle, isBookmarked } from "./service";
+import UserCardSkeleton from "./userCardSkeleton";
 
 const UserList = () => {
   const [keyword, setKeyword] = useState("");
@@ -25,7 +26,7 @@ const UserList = () => {
     })
   }, [targetRef])
 
-  const { data, refetch } = useQuery({
+  const { data, refetch, isPending } = useQuery({
     queryKey: ["users"],
     queryFn: async () => {
       const response = await fetch(`https://api.github.com/search/users?q=k&per_page=20&page=${pageRef.current}`);
@@ -81,7 +82,7 @@ const UserList = () => {
     <div className="p-4">
       <input className="mb-2 border border-slate-900 dark:border-slate-50 rounded-lg bg-transparent focus:outline-none" type="text" value={keyword} onChange={changeKeyword} />
       <div className="grid grid-cols-2 gap-4">
-        {userList}
+          {isPending ? <UserCardSkeleton /> : userList}
       </div>
       <div className="h-12" ref={targetRef}></div>
     </div>
