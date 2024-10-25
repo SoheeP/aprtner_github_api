@@ -16,7 +16,7 @@ const UserCard = ({user, onBookmarkClick}: Props) => {
         <BookmarkIcon isActive={user.isLiked} />
       </button>
       <a className="flex gap-2 items-center" href={user.githubUrl}>
-        <Image className="inline-block h-12 w-12 rounded-full ring-2 ring-transparent" src={user.imageUrl} alt={`${user.name} profile image`} width="150" height="150" />
+        <Image className="inline-block h-12 w-12 rounded-full ring-2 ring-transparent" src={user.imageUrl} alt={`${user.name} profile image`} width="20" height="20" priority={true} />
         <div>{user.name}</div>
       </a>
     </div>
