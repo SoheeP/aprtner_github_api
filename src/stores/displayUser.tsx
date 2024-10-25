@@ -5,7 +5,8 @@ import { createStore } from "zustand/vanilla";
 export type DisplayUserStore = {
   displayUser: User[],
   actions: {
-    updateDisplayUser: (displayUser:User[]) => void
+    addDisplayUsers: (displayUser:User[]) => void
+    updateDisplayUser: (displayUser:User) => void
   }
 }
 
@@ -13,7 +14,15 @@ export const createDisplayUserStore = () => {
   return createStore<DisplayUserStore>()((set) => ({
     displayUser: [],
     actions: {
-      updateDisplayUser: (displayUser:User[]) => set((state) => ({ displayUser: [...state.displayUser, ...displayUser]})),
+      addDisplayUsers: (displayUser:User[]) => set((state) => ({ displayUser: [...state.displayUser, ...displayUser]})),
+      updateDisplayUser: (displayUser:User) => set((state) => {
+        const userIndex = state.displayUser.findIndex((user) => user.id === displayUser.id)
+        const newDisplayUser = [...state.displayUser]
+        newDisplayUser.splice(userIndex, 1, displayUser)
+        return {
+          displayUser: newDisplayUser
+        }
+      })
     }
   }))
 }

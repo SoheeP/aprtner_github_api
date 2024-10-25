@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import UserCard from "./userCard";
 import { GithubUser, type User } from "./type";
 import { useDisplayUserStore } from "@/providers/displayUserStoreProvider";
+import { bookmarkToggle, isBookmarked } from "./service";
 
 const UserList = () => {
   const [keyword, setKeyword] = useState("");
@@ -34,37 +35,51 @@ const UserList = () => {
   },)
 
   useEffect(() => {
-    if (data) actions.updateDisplayUser(data.map((user:GithubUser) => convertUser(user)));
+    if (data) actions.addDisplayUsers(data.map((user:GithubUser) => convertUser(user)));
   }, [data])
 
   const convertUser = (data:GithubUser):User => {
-    return {
-      id: data.node_id,
-      name: data.login,
-      imageUrl: data.avatar_url,
-      githubUrl: data.html_url,
+    const defaultUser:User = {
+      id: "tiny ping",
+      name: "Tiny Ping",
+      imageUrl: "https://static.wikia.nocookie.net/catchteenieping/images/a/ac/%ED%95%98%EC%B8%84%EC%9E%89_%EC%8B%9C%EC%A6%8C_2.png/revision/latest/thumbnail/width/360/height/450?cb=20211024200626&path-prefix=ko",
+      githubUrl: "https://github.com",
       isLiked: false
+    }
+
+    return {
+      id: data.node_id || defaultUser.id,
+      name: data.login || defaultUser.name,
+      imageUrl: data.avatar_url || defaultUser.imageUrl,
+      githubUrl: data.html_url || defaultUser.githubUrl,
+      isLiked: isBookmarked(data.node_id)
     }
   }
 
-  const userList = displayUser?.map(({ id, name, imageUrl, githubUrl, isLiked=false }:User, index) => {
+  const onBookmarkClick = (user:User) => {
+    bookmarkToggle(user);
+    actions.updateDisplayUser({
+      ...user,
+      isLiked: !user.isLiked
+    })
+  }
+  const userList = displayUser?.map((user, index) => {
     return (
-      <UserCard key={`${id}-${name}-${index}`} id={id} name={name} imageUrl={imageUrl} githubUrl={githubUrl} isLiked={isLiked} />
+      <UserCard key={`${user.id}-${user.name}-${index}`} user={user} onBookmarkClick={onBookmarkClick} />
     )
   })
-
 
   const changeKeyword = (e:React.ChangeEvent<HTMLInputElement>) => {
     setKeyword(e.target.value);
   }
 
-  const handleRefetch = () => {
+  const handleRefetch = async () => {
+    await refetch();
     pageRef.current += 1;
-    refetch()
   }
   return (
-    <div>
-      <input className="border border-slate-50 rounded-lg bg-transparent focus:outline-none" type="text" value={keyword} onChange={changeKeyword} />
+    <div className="p-4">
+      <input className="mb-2 border border-slate-900 dark:border-slate-50 rounded-lg bg-transparent focus:outline-none" type="text" value={keyword} onChange={changeKeyword} />
       <div className="grid grid-cols-2 gap-4">
         {userList}
       </div>
