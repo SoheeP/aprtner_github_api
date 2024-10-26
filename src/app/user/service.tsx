@@ -57,13 +57,15 @@ export const convertUser = (data: GithubUser): User => {
 
 export const useGithubUserQuery = (keyword: string, page: number) => {
   return useQuery({
-    queryKey: ["users", keyword],
+    queryKey: ["users", keyword, page],
     queryFn: async ({ queryKey }) => {
+      if (keyword === "") return [];
       const response = await fetch(
         `https://api.github.com/search/${queryKey[0]}?q=${keyword}&per_page=20&page=${page}`
       );
       const jsonData = await response.json();
-      return jsonData.items;
+      if (jsonData) return jsonData.items;
+      return [];
     },
     enabled: !!keyword,
   });

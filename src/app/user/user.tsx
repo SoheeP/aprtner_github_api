@@ -13,11 +13,20 @@ const UserList = () => {
   const targetRef = useRef<HTMLDivElement>(null);
   const { displayUser, actions } = useDisplayUserStore((state) => state);
   const debouncedKeyword = useDebounce(keyword, 500);
+  const {
+    data: githubUser,
+    refetch,
+    isFetching,
+  } = useGithubUserQuery(debouncedKeyword, pageRef.current);
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
-          handleRefetch();
+          if (keyword !== "") {
+            refetch().then(() => {
+              pageRef.current += 1;
+            });
+          }
         }
       },
       {
@@ -28,13 +37,7 @@ const UserList = () => {
     return () => {
       observer.disconnect();
     };
-  }, [targetRef]);
-
-  const {
-    data: githubUser,
-    refetch,
-    isPending,
-  } = useGithubUserQuery(debouncedKeyword, pageRef.current);
+  }, [targetRef, refetch, keyword]);
 
   useEffect(() => {
     if (githubUser)
@@ -63,30 +66,29 @@ const UserList = () => {
   const changeKeyword = (e: React.ChangeEvent<HTMLInputElement>) => {
     setKeyword(e.target.value);
     actions.initDisplayUser();
+    pageRef.current = 1;
   };
-  const handleRefetch = async () => {
-    await refetch();
-    pageRef.current += 1;
-  };
+
   return (
-    <div className="p-4">
-      <input
-        className="mb-2 border border-slate-900 dark:border-slate-50 rounded-lg bg-transparent focus:outline-none"
-        type="text"
-        value={keyword}
-        onChange={changeKeyword}
-      />
-      <div className="grid grid-cols-2 gap-4">
-        {isPending ? (
-          <UserCardSkeleton />
-        ) : displayUser.length > 0 ? (
-          userList
-        ) : (
-          <div className="text-center col-span-2">No user found</div>
+    <>
+      <div className="p-4">
+        <input
+          className="mb-2 border border-slate-900 dark:border-slate-50 rounded-lg bg-transparent focus:outline-none"
+          type="text"
+          value={keyword}
+          onChange={changeKeyword}
+        />
+        {displayUser.length > 0 && (
+          <>
+            <div className="grid grid-cols-2 gap-4">
+              {userList}
+              {isFetching && <UserCardSkeleton />}
+            </div>
+          </>
         )}
       </div>
-      {displayUser.length > 0 && <div className="h-12" ref={targetRef}></div>}
-    </div>
+      <div className="h-12" ref={targetRef}></div>
+    </>
   );
 };
 
