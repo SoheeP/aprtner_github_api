@@ -9,7 +9,7 @@ import useDebounce from "@/hooks/useDebounce";
 
 const UserList = () => {
   const [keyword, setKeyword] = useState("");
-  const pageRef = useRef(1);
+  const pageRef = useRef(0);
   const targetRef = useRef<HTMLDivElement>(null);
   const { displayUser, actions } = useDisplayUserStore((state) => state);
   const debouncedKeyword = useDebounce(keyword, 500);
@@ -18,21 +18,18 @@ const UserList = () => {
     refetch,
     isFetching,
   } = useGithubUserQuery(debouncedKeyword, pageRef.current);
+
+  const handleIntersection = (entries: IntersectionObserverEntry[]) => {
+    if (entries[0].isIntersecting && keyword !== "") {
+      refetch().then(({ data }) => {
+        if (data) pageRef.current += 1;
+      });
+    }
+  };
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          if (keyword !== "") {
-            refetch().then(() => {
-              pageRef.current += 1;
-            });
-          }
-        }
-      },
-      {
-        threshold: 1.0,
-      }
-    );
+    const observer = new IntersectionObserver(handleIntersection, {
+      threshold: 1.0,
+    });
     if (targetRef.current) observer.observe(targetRef.current);
     return () => {
       observer.disconnect();
@@ -63,10 +60,10 @@ const UserList = () => {
     );
   });
 
-  const changeKeyword = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChangeKeyword = (e: React.ChangeEvent<HTMLInputElement>) => {
     setKeyword(e.target.value);
     actions.initDisplayUser();
-    pageRef.current = 1;
+    pageRef.current = 0;
   };
 
   return (
@@ -76,7 +73,7 @@ const UserList = () => {
           className="mb-2 border border-slate-900 dark:border-slate-50 rounded-lg bg-transparent focus:outline-none"
           type="text"
           value={keyword}
-          onChange={changeKeyword}
+          onChange={handleChangeKeyword}
         />
         {displayUser.length > 0 && (
           <>

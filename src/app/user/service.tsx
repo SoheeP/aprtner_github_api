@@ -10,42 +10,35 @@ export const getBookmarkNodeIds = (): User[] => {
 
 export const bookmarkToggle = (user: User) => {
   const bookmarkNodeIds = getBookmarkNodeIds();
-  const findIndex = bookmarkNodeIds.findIndex(
+  const isBookmarked = bookmarkNodeIds.some(
     (bookmarked) => bookmarked.id === user.id
   );
-  if (findIndex !== -1) {
-    const deleted = bookmarkNodeIds.filter(
-      (bookmarked) => bookmarked.id !== user.id
-    );
-    localStorage.setItem(BOOKMARK_STORAGE_KEY, JSON.stringify(deleted));
-  } else {
-    localStorage.setItem(
-      BOOKMARK_STORAGE_KEY,
-      JSON.stringify([
+  const updatedBookmarked = isBookmarked
+    ? bookmarkNodeIds.filter((bookmarked) => bookmarked.id !== user.id)
+    : [
         ...bookmarkNodeIds,
         {
           ...user,
           isLiked: true,
         },
-      ])
-    );
-  }
+      ];
+  localStorage.setItem(BOOKMARK_STORAGE_KEY, JSON.stringify(updatedBookmarked));
 };
 
 export const isBookmarked = (id: string) => {
   return getBookmarkNodeIds().findIndex((user) => user.id === id) !== -1;
 };
 
-export const convertUser = (data: GithubUser): User => {
-  const defaultUser: User = {
-    id: "tiny ping",
-    name: "Tiny Ping",
-    imageUrl:
-      "https://static.wikia.nocookie.net/catchteenieping/images/a/ac/%ED%95%98%EC%B8%84%EC%9E%89_%EC%8B%9C%EC%A6%8C_2.png/revision/latest/thumbnail/width/360/height/450?cb=20211024200626&path-prefix=ko",
-    githubUrl: "https://github.com",
-    isLiked: false,
-  };
+const defaultUser: User = {
+  id: "tiny ping",
+  name: "Tiny Ping",
+  imageUrl:
+    "https://static.wikia.nocookie.net/catchteenieping/images/a/ac/%ED%95%98%EC%B8%84%EC%9E%89_%EC%8B%9C%EC%A6%8C_2.png/revision/latest/thumbnail/width/360/height/450?cb=20211024200626&path-prefix=ko",
+  githubUrl: "https://github.com",
+  isLiked: false,
+};
 
+export const convertUser = (data: GithubUser): User => {
   return {
     id: data.node_id || defaultUser.id,
     name: data.login || defaultUser.name,
@@ -55,14 +48,18 @@ export const convertUser = (data: GithubUser): User => {
   };
 };
 
+const ITEMS_PER_PAGE = 20;
+
+const fetchGithubUser = async (keyword: string, page: number) =>
+  await fetch(
+    `https://api.github.com/search/users?q=${keyword}&per_page=${ITEMS_PER_PAGE}&page=${page}`
+  );
 export const useGithubUserQuery = (keyword: string, page: number) => {
   return useQuery({
     queryKey: ["users", keyword, page],
-    queryFn: async ({ queryKey }) => {
+    queryFn: async () => {
       if (keyword === "") return [];
-      const response = await fetch(
-        `https://api.github.com/search/${queryKey[0]}?q=${keyword}&per_page=20&page=${page}`
-      );
+      const response = await fetchGithubUser(keyword, page);
       const jsonData = await response.json();
       if (jsonData) return jsonData.items;
       return [];
